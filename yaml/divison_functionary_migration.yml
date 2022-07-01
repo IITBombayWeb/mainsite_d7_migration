@@ -1,0 +1,42 @@
+id: divison_functionary_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/divison_functionary_migration.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+process:
+  title: title
+  field_emp_designation: employee_designation
+  field_period: period_of_active_position
+  field_emp_role: employee_role
+  field_lstweight: list_weight
+  field_emp_email: email
+  field_emp_phone: phone
+  field_emp_fax_number: fax_number
+  field_emp_phone_extn: phone_no_extn
+  field_emp_mobile: mobile
+  field_unit_category:
+    -
+      plugin: explode
+      delimiter: ', '
+      source: unit_category
+    -
+      plugin: migration_lookup
+      migration: taxonomy_unit_category
+  field_employee_name_ref:
+    -
+      plugin: explode
+      delimiter: ', '
+      source: employee_name_reference
+    -
+      plugin: migration_lookup
+      migration: inst_functionary_migration
+  type:
+    plugin: default_value
+    default_value: division_functionary
+destination:
+  plugin: entity:node

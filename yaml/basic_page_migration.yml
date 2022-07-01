@@ -1,0 +1,51 @@
+id: basic_page_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/migration_basic_page_edited_content.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source_uri: 'public://old_files'
+    file_dest_uri: 'public://migrated_files'
+process:
+  title: title
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  language: language
+
+
+  field_file_upload_basic_page:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: file_upload
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_inline_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: inline_images
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  type:
+    plugin: default_value
+    default_value: page
+destination:
+  plugin: entity:node

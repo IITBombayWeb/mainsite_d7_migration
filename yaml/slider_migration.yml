@@ -1,0 +1,38 @@
+id: slider_migration2
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/migration_slider_sorted.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+
+process:
+  title: title
+  field_language_slider: language
+  field_slidertransition: transition
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  field_sliderimage:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: image
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+  type:
+    plugin: default_value
+    default_value: slider
+destination:
+  plugin: entity:node

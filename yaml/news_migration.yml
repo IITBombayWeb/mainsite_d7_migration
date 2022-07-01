@@ -1,0 +1,60 @@
+id: news_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/migration_breaking_news_edited_data.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+process:
+  title: title
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  language: language
+  workbench_access: edit_link
+  # field_news_date: news_date
+  field_news_video: news_video
+  field_readmore_url: detail_story_title
+
+  field_tags:
+    -
+      plugin: explode
+      delimiter: ', '
+      source: tag_words
+    -
+      plugin: migration_lookup
+      migration: taxonomy_tags
+  
+  field_inline_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: inline_images
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_news_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: news_image
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  type:
+    plugin: default_value
+    default_value: news
+destination:
+  plugin: entity:node

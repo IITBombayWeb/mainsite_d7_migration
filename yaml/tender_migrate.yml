@@ -1,0 +1,43 @@
+id: tender_migration2
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/migration_tenders_list_sorted.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+
+process:
+  title: title
+  field_advertisement_number: advertisement_number
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  field_tender_division: division_department
+  # field_tender_due_date: due_date
+  field_emp_email: email
+  field_tender_number: purchase_requisition_number
+  field_tender_qty: quantity
+  field_tender_technical_contact: tender_technical_contact
+  field_tender_file:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: tender_files
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+  type:
+    plugin: default_value
+    default_value: tenders
+destination:
+  plugin: entity:node

@@ -1,0 +1,39 @@
+id: iitb_director_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/iitb_director_migration.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+process:
+  title: title
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  language: language
+  # field_period: period_of_active_position
+  field_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: photograph
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+
+  type:
+    plugin: default_value
+    default_value: iitb_directors
+destination:
+  plugin: entity:node

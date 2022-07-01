@@ -1,0 +1,47 @@
+id: annual_report_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/annual_report_migration.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+process:
+  title: title
+  language: language
+  field_ar_year: year
+
+  field_file_upload:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: publications
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_ar_file:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: file_upload
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  type:
+    plugin: default_value
+    default_value: annual_report
+destination:
+  plugin: entity:node

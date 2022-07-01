@@ -1,0 +1,71 @@
+id: article_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/article_migration.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+process:
+  title: title
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  language: language
+
+  field_inline_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: inline_images
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: photograph
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_file_upload:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: file_upload
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_inline_file_upload:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: inline_file_upload
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  type:
+    plugin: default_value
+    default_value: article
+destination:
+  plugin: entity:node

@@ -1,0 +1,33 @@
+id: award_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/award_migration.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+process:
+  title: title
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  # field_employee_name_ref: employee_name_reference
+  field_award_year: award_year
+  field_award_name: award_name
+  field_award_url: award_url
+  field_employee_name_ref:
+    -
+      plugin: explode
+      delimiter: ', '
+      source: employee_name_reference
+    -
+      plugin: migration_lookup
+      migration: inst_functionary_migration
+  type:
+    plugin: default_value
+    default_value: awards
+destination:
+  plugin: entity:node

@@ -1,0 +1,47 @@
+id: content_taxonomy_migrate6
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/taxonomy_content_test.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+process:
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  title: tags
+  field_tags_test:
+    # First we convert the multiple tag values into an array of tag names
+    # using the explode plugin which simply explodes/splits a string by a given
+    # delimiter. In our case, we split the text by ", " to get rid of the
+    # spaces after the commas at once.
+    -
+      plugin: explode
+      delimiter: ', '
+      source: tags
+    # Once the tag names are converted to arrays, we pass the term names
+    # through the "migration" plugin. This easy-to-use plugin does the grand
+    # task of looking up the terms we imported during the "term_tags"
+    # migration and utilizes the IDs of those terms during this migration.
+    #
+    # To make things better, it can handle multiple values, so each term
+    # name gets converted into it's relevant ID. Cool!
+    #
+    # The migration plugin can be used when the related entities (like tags)
+    # are available in a separate data source so that they can be imported
+    # first. If they are not available or cannot be extracted to their own
+    # data source for the migration, one would have to write their own
+    # "process" plugin to explode the terms and translate the term names into
+    # their corresponding term IDs.
+    -
+      plugin: migration_lookup
+      migration: taxonomy_reseach_domain2
+  type:
+    plugin: default_value
+    default_value: migration_taxonomy_test
+destination:
+  plugin: entity:node

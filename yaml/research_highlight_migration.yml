@@ -1,0 +1,63 @@
+id: research_highlight_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/research_highlight_migration.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+
+process:
+  title: title
+  language: language
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  field_details_url/value: link_to_published_work
+  field_details_url/format:
+    plugin: default_value 
+    default_value: full_html
+
+  field_research_document:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: research_document
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: photograph
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_research_domain:
+    -
+      plugin: explode
+      delimiter: ', '
+      source: research_domain
+    -
+      plugin: migration_lookup
+      migration: taxonomy_reseach_domain2
+  type:
+    plugin: default_value
+    default_value: research_highlight
+destination:
+  plugin: entity:node

@@ -1,0 +1,35 @@
+id: ioe_all_content_migration4
+label: 'Migrating fields with file for IOE content'
+source:
+  plugin: csv
+  path: public://csv/ioe_migration_data.csv
+  delimiter: ','
+  enclosure: '"'
+  header_offset: 0
+  ids:
+    - id
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+process:
+  type:
+    plugin: default_value
+    default_value: ioe_pages
+  title: title
+  field_ioe_file:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: ioe_file
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+  body/value: body
+  body/format:
+    plugin: default_value
+    default_value: basic_html
+destination:
+  plugin: 'entity:node'

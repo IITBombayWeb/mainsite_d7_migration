@@ -1,0 +1,70 @@
+id: event_migration
+label: Migrate terms from a CSV source
+source:
+  plugin: csv
+  path: public://csv/migration_event_edited_content.csv
+  header_row_count: 1
+  ids:
+    [id]
+  delimiter: ','
+  enclosure: '"'
+  constants:
+    file_source: public://old_files/
+    file_dest: 'public://migrated_files/'
+process:
+  title: title
+  body/value: body 
+  body/format: 
+    plugin: default_value 
+    default_value: full_html
+  language: language
+  workbench_access: edit_link
+  field_event_name: event_name_full_detailed
+  field_event_type: event_type
+  # field_event_date: event_date
+  field_event_location: venue
+  field_event_readmore_url: detail_story_url
+  field_event_file: event_file
+  
+
+  field_event_video:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: event_video
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_inline_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: inline_images
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  field_event_image:
+    -
+      plugin: skip_on_empty
+      method: process
+      source: event_image
+    -
+      plugin: explode
+      delimiter: ,
+    -
+      plugin: file_import
+      destination: constants/file_dest
+
+  type:
+    plugin: default_value
+    default_value: event
+destination:
+  plugin: entity:node

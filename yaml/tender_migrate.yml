@@ -1,4 +1,4 @@
-id: tender_migration2
+id: tender_migration5
 label: Migrate terms from a CSV source
 source:
   plugin: csv
@@ -20,7 +20,13 @@ process:
     plugin: default_value 
     default_value: full_html
   field_tender_division: division_department
-  # field_tender_due_date: due_date
+  field_tender_due_date/value:
+    plugin: format_date
+    source: due_date
+    from_format: 'Y-m-j H:i:s'
+    to_format: 'Y-m-d\TH:i:s'
+    from_timezone: 'Asia/Kolkata'
+    to_timezone: 'UTC'
   field_emp_email: email
   field_tender_number: purchase_requisition_number
   field_tender_qty: quantity
@@ -36,6 +42,9 @@ process:
     -
       plugin: file_import
       destination: constants/file_dest
+  
+
+
   type:
     plugin: default_value
     default_value: tenders

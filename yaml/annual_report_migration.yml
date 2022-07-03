@@ -14,7 +14,13 @@ source:
 process:
   title: title
   language: language
-  field_ar_year: year
+  field_ar_year/value:
+    plugin: format_date
+    source: year
+    from_format: 'Y-m-j H:i:s'
+    to_format: 'Y-m-d\TH:i:s'
+    from_timezone: 'Asia/Kolkata'
+    to_timezone: 'UTC'
 
   field_file_upload:
     -

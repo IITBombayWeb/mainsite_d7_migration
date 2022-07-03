@@ -13,7 +13,13 @@ source:
     file_dest: 'public://migrated_files/'
 process:
   title: title
-  field_edition: edition
+  field_edition/value:
+    plugin: format_date
+    source: edition
+    from_format: 'Y-m-j H:i:s'
+    to_format: 'Y-m-d\TH:i:s'
+    from_timezone: 'Asia/Kolkata'
+    to_timezone: 'UTC'
   field_file_upload:
     -
       plugin: skip_on_empty

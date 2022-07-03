@@ -18,7 +18,6 @@ process:
   body/format: 
     plugin: default_value 
     default_value: full_html
-  # field_internal_file: path
   file_source_path:
     -
       plugin: skip_on_empty

@@ -14,8 +14,14 @@ process:
   body/format: 
     plugin: default_value 
     default_value: full_html
-  # field_employee_name_ref: employee_name_reference
-  field_award_year: award_year
+  # field_award_year: award_year
+  field_award_year/value:
+    plugin: format_date
+    source: award_year
+    from_format: 'Y-m-j H:i:s'
+    to_format: 'Y-m-d\TH:i:s'
+    from_timezone: 'Asia/Kolkata'
+    to_timezone: 'UTC'
   field_award_name: award_name
   field_award_url: award_url
   field_employee_name_ref:

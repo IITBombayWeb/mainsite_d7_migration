@@ -35,6 +35,17 @@ process:
     -
       plugin: migration_lookup
       migration: inst_functionary_migration
+
+  field_test_range/value:
+    plugin: format_date
+    source: src_date
+    from_format: 'l, F j, Y'
+    to_format: 'Y-m-d'
+  field_test_range/end_value:
+    plugin: format_date
+    source: src_date_end
+    from_format: 'l, F j, Y'
+    to_format: 'Y-m-d'
   type:
     plugin: default_value
     default_value: division_functionary

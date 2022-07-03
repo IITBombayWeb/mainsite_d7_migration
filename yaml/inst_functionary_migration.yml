@@ -11,7 +11,13 @@ source:
 process:
   title: title
   field_emp_designation: employee_designation
-  field_period: period_of_active_position
+  field_period/value:
+    plugin: format_date
+    source: period_of_active_position
+    from_format: 'Y-m-j H:i:s'
+    to_format: 'Y-m-d\TH:i:s'
+    from_timezone: 'Asia/Kolkata'
+    to_timezone: 'UTC'
   field_emp_role: employee_role
   field_lstweight: list_weight
   field_emp_email: email

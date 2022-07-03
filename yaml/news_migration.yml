@@ -16,7 +16,13 @@ process:
     default_value: full_html
   language: language
   workbench_access: edit_link
-  # field_news_date: news_date
+  field_news_date/value:
+    plugin: format_date
+    source: news_date
+    from_format: 'Y-m-j H:i:s'
+    to_format: 'Y-m-d\TH:i:s'
+    from_timezone: 'Asia/Kolkata'
+    to_timezone: 'UTC'
   field_news_video: news_video
   field_readmore_url: detail_story_title
 

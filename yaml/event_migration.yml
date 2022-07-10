@@ -63,15 +63,15 @@ process:
       plugin: file_import
       destination: constants/file_dest
 
-  field_test_range/value:
+  field_event_date/value:
     plugin: format_date
     source: src_date
-    from_format: 'l, F j, Y'
+    from_format: 'Y-m-j H:i:s'
     to_format: 'Y-m-d'
-  field_test_range/end_value:
+  field_event_date/end_value:
     plugin: format_date
     source: src_date_end
-    from_format: 'l, F j, Y'
+    from_format: 'Y-m-j H:i:s'
     to_format: 'Y-m-d'
   type:
     plugin: default_value

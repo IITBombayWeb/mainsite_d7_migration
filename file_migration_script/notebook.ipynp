@@ -1,0 +1,375 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "\n",
+    "files = [(file, os.path.join(root, file)) for root, subdirs, files in os.walk('files') for file in files]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "13088"
+      ]
+     },
+     "execution_count": 26,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(files)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import re\n",
+    "\n",
+    "valid_file_regex = re.compile(r'^[a-zA-Z0-9_.-]*$')\n",
+    "\n",
+    "invalid_files = list(filter(lambda x: re.match(valid_file_regex, x[0]) == None, files))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "3468"
+      ]
+     },
+     "execution_count": 28,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(invalid_files)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# loading csv files in memory\n",
+    "import pandas as pd\n",
+    "\n",
+    "csvs = {}\n",
+    "\n",
+    "CSV_FILE_PATH = 'csv'\n",
+    "\n",
+    "for f in os.listdir(CSV_FILE_PATH):\n",
+    "    csv = pd.read_csv(os.path.join(CSV_FILE_PATH, f), dtype=str)\n",
+    "    csvs[f] = csv\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from urllib.parse import quote\n",
+    "\n",
+    "# Building a table to store invalid file names and it's reference in csv\n",
+    "\n",
+    "# The key of the dict is \"File path\" \n",
+    "# The value is a tuple of the form: (Encoded file path, filename, List of references)\n",
+    "# List of references is list containing tuple of the form: (csv file name, column number, row number)\n",
+    "\n",
+    "invalid_file_table = {}\n",
+    "\n",
+    "# iterating over each invalid file\n",
+    "for fileName, filePath in invalid_files:\n",
+    "    encodedPath = quote(filePath)\n",
+    "    listReferences = []\n",
+    "    for csv_file_name in csvs:\n",
+    "        csv_dataframe = csvs[csv_file_name]\n",
+    "        num_cols = len(csv_dataframe.columns)\n",
+    "\n",
+    "        for col_i in range(num_cols):\n",
+    "            col_series = csv_dataframe.iloc[:,col_i].dropna()\n",
+    "            contains_series = col_series.str.contains(encodedPath)\n",
+    "\n",
+    "            contains_indices = list(contains_series[contains_series].index)\n",
+    "\n",
+    "            for row_j in contains_indices:\n",
+    "                listReferences.append((csv_file_name, col_i, row_j))\n",
+    "\n",
+    "    invalid_file_table[filePath] = (encodedPath, fileName, listReferences)\n",
+    "\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "str"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "pd.set_option('display.max_colwidth', None)\n",
+    "type(csvs['migration-article-content-download-file.csv'].iloc[1123, 2])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "existing_files_set = set(map(lambda x: x[1], files))\n",
+    "new_files_set = set()\n",
+    "\n",
+    "rename_table = {}\n",
+    "\n",
+    "valid_char = re.compile(r'[a-zA-Z0-9_.-]')\n",
+    "\n",
+    "path_gen = lambda op, nn: \"/\".join( op.split('/')[:-1] + [ nn ])\n",
+    "\n",
+    "for path in invalid_file_table:\n",
+    "\n",
+    "    name = invalid_file_table[path][1]\n",
+    "    new_name = \"\".join(map( lambda x : '_'  if valid_char.match(x) == None else x, name ))\n",
+    "\n",
+    "    new_path = path_gen(path, new_name)\n",
+    "\n",
+    "    counter = 1\n",
+    "    append_counter = False\n",
+    "\n",
+    "    while new_path in existing_files_set or new_path in new_files_set:\n",
+    "        name_splits = new_name.split('.')\n",
+    "        idx = -2 if len(name_splits) > 1 else -1\n",
+    "        frag = name_splits[idx][:-4] if append_counter else name_splits[idx]\n",
+    "        frag += f'_{counter:03d}'\n",
+    "        name_splits[idx] = frag\n",
+    "        new_name = \".\".join(name_splits)\n",
+    "        new_path = path_gen(new_path, new_name)\n",
+    "        append_counter = True\n",
+    "        counter += 1\n",
+    "\n",
+    "    new_files_set.add(new_path)    \n",
+    "\n",
+    "    rename_table[path] = (new_path, new_name)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{}"
+      ]
+     },
+     "execution_count": 32,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "\n",
+    "\n",
+    "# Checking collision after renaming\n",
+    "path_set = {}\n",
+    "\n",
+    "for old_path in rename_table:\n",
+    "    new_path, new_name = rename_table[old_path]\n",
+    "    \n",
+    "    if new_path in existing_files_set:\n",
+    "        if new_path in path_set:\n",
+    "            path_set[new_path].add(new_path)\n",
+    "        else:\n",
+    "            path_set[new_path] = set([new_path])\n",
+    "\n",
+    "    if new_path in path_set:\n",
+    "        path_set[new_path].add(old_path)\n",
+    "    else:\n",
+    "        path_set[new_path] = set([old_path])\n",
+    "\n",
+    "collision_table = {k: path_set[k] for k in path_set if len(path_set[k]) > 1 }\n",
+    "\n",
+    "collision_table\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Not needed now. Checking and fixing collisions while renaming files\n",
+    "\n",
+    "## fixing collisions manually\n",
+    "\n",
+    "# rename_table['files/D-26-2018-19 revised infosheet.pdf'] = ('files/D-26-2018-19_revised_infosheet_001.pdf', 'D-26-2018-19_revised_infosheet_001.pdf')\n",
+    "# rename_table['files/D-26-2018-19 revised_infosheet.pdf'] = ('files/D-26-2018-19_revised_infosheet_002.pdf', 'D-26-2018-19_revised_infosheet_002.pdf')\n",
+    "\n",
+    "# rename_table['files/tenders/2020-12/Tech Spec  Switch  NC  SFP Cable_0.pdf'] = ('files/tenders/2020-12/Tech_Spec__Switch__NC__SFP_Cable_0_001.pdf', 'Tech_Spec__Switch__NC__SFP_Cable_0_001.pdf')\n",
+    "# rename_table['files/tenders/2020-12/Tech Spec, Switch, NC, SFP Cable_0.pdf'] = ('files/tenders/2020-12/Tech_Spec__Switch__NC__SFP_Cable_0_002.pdf', 'Tech_Spec__Switch__NC__SFP_Cable_0_002.pdf')\n",
+    "\n",
+    "# rename_table['files/tenders/2020-12/NIT ( 6100000518).pdf'] = ('files/tenders/2020-12/NIT___6100000518_001.pdf', 'NIT___6100000518_001.pdf')\n",
+    "# rename_table['files/tenders/2020-12/NIT_( 6100000518).pdf'] = ('files/tenders/2020-12/NIT___6100000518_002.pdf', 'NIT___6100000518_002.pdf')\n",
+    "\n",
+    "# rename_table['files/tenders/2020-02/Technical Specifications 2.pdf'] = ('files/tenders/2020-02/Technical_Specifications_2_001.pdf', 'Technical_Specifications_2_001.pdf')\n",
+    "# rename_table['files/tenders/2020-02/Technical Specifications_2.pdf'] = ('files/tenders/2020-02/Technical_Specifications_2_002.pdf', 'Technical_Specifications_2_002.pdf')\n",
+    "\n",
+    "# rename_table['files/jobs/2019-08/Detailed Advt Part time Physician and Visiting Orthopedic Surgeon.pdf'] = ('files/jobs/2019-08/Detailed_Advt_Part_time_Physician_and_Visiting_Orthopedic_Surgeon_001.pdf', 'Detailed_Advt_Part_time_Physician_and_Visiting_Orthopedic_Surgeon_001.pdf')\n",
+    "# rename_table['files/jobs/2019-08/Detailed Advt_Part time Physician and Visiting Orthopedic Surgeon.pdf'] = ('files/jobs/2019-08/Detailed_Advt_Part_time_Physician_and_Visiting_Orthopedic_Surgeon_002.pdf', 'Detailed_Advt_Part_time_Physician_and_Visiting_Orthopedic_Surgeon_002.pdf')\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Error with renaming file: files/DATA SUBMITTED FOR ENGINEERING CATEGORY.PDF\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "fatal: destination exists, source=files/DATA SUBMITTED FOR ENGINEERING CATEGORY.PDF, destination=files/DATA_SUBMITTED_FOR_ENGINEERING_CATEGORY.PDF\n"
+     ]
+    }
+   ],
+   "source": [
+    "\n",
+    "logFile = open(\"operations.log\", 'at')\n",
+    "\n",
+    "for old_path in invalid_file_table:\n",
+    "    new_path, new_name = rename_table[old_path]\n",
+    "\n",
+    "    ret_mv = os.system(f'git mv \"{old_path}\" \"{new_path}\"')\n",
+    "\n",
+    "    if ret_mv != 0:\n",
+    "        print(f\"Error with renaming file: {old_path}\")\n",
+    "        break\n",
+    "    \n",
+    "    # Add to log\n",
+    "    logFile.write(f'{old_path}::renamed to::{new_path}\\n')\n",
+    "\n",
+    "    encoded_new_path = quote(new_path)\n",
+    "\n",
+    "    for csv_file_name, col, row in invalid_file_table[old_path][2]:\n",
+    "        csv_file = csvs[csv_file_name]\n",
+    "\n",
+    "        orig_cont = csv_file.iloc[row, col]\n",
+    "        replaced_cont = orig_cont.replace(invalid_file_table[old_path][0], encoded_new_path)\n",
+    "\n",
+    "        csv_file.iloc[row, col] = replaced_cont\n",
+    "\n",
+    "        logFile.write(f\"{csv_file_name}:{row},{col}::\\n\")\n",
+    "        logFile.write(f\"{orig_cont}\\n\")\n",
+    "        logFile.write(f\"{replaced_cont}\\n\\n\")\n",
+    "\n",
+    "logFile.close()\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['files/article/images/pasted image 0 (2).png',\n",
+       " 'files/tenders/2021-07/Technical Specifications(2).pdf',\n",
+       " 'files/news/2018-04/IMG_0886 (2).JPG',\n",
+       " 'files/styles/news_images/public/news/2018-04/IMG_0886 (2).JPG',\n",
+       " 'files/jobs/2017-02/Rect-Admn-II-2016-12(2).pdf',\n",
+       " 'files/styles/large/public/news/2018-03/275A5264 (2).JPG',\n",
+       " 'files/tenders/2014-12/rfp_eAuction (2).pdf',\n",
+       " 'files/tenders/2022-01/Corrigendum I (2).pdf',\n",
+       " 'files/tenders/2022-07/Technical specification (2).pdf',\n",
+       " 'files/styles/full_hd/public/article/images/pasted image 0 (2).png',\n",
+       " 'files/news/2018-03/275A5264 (2).JPG',\n",
+       " 'files/tenders/2014-12/rfp_eAuction (2).odt',\n",
+       " 'files/tenders/2022-06/price Bid_merged (2).pdf',\n",
+       " 'files/tenders/2021-04/Formats (2).pdf',\n",
+       " 'files/tenders/2021-06/Technical Specification for RS Seismogrpah (2).pdf',\n",
+       " 'files/tenders/2020-11/Technical Specifications (2).pdf',\n",
+       " 'files/article/images/WhatsApp Image 2018-08-26 at 07.06.34 (2).jpeg',\n",
+       " 'files/styles/medium/public/article/images/WhatsApp Image 2018-08-26 at 07.06.34 (2).jpeg',\n",
+       " 'files/tenders/2021-06/Technical specifications (2).pdf',\n",
+       " 'files/tenders/2021-07/format(2).pdf',\n",
+       " 'files/news/2018-04/IMG_0893 (2).JPG']"
+      ]
+     },
+     "execution_count": 41,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "[x for x in existing_files_set if '(2)' in x]"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3.8.9 64-bit",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.9"
+  },
+  "orig_nbformat": 4,
+  "vscode": {
+   "interpreter": {
+    "hash": "31f2aee4e71d21fbe5cf8b01ff0e069b9275f58929596ceb00d14d90e3e16cd6"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

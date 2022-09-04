@@ -1,22 +1,26 @@
 # %%
 import os
-import re
-import pandas as pd
-from urllib.parse import quote
 
-files = [(file, os.path.join(root, file)) for root, subdirs, files in os.walk('files') for file in files]
 
+files = [(file, os.path.join(root, file)) for root, subdirs, files in os.walk(os.path.join("files")) for file in files]
 
 # %%
+len(files)
 
+# %%
+import re
 
-valid_file_regex = re.compile(r'^[a-zA-Z0-9_.-]*$')
+valid_file_regex = re.compile(r'^[a-zA-Z0-9_.]*$')
 
 invalid_files = list(filter(lambda x: re.match(valid_file_regex, x[0]) == None, files))
 
 
 # %%
+len(invalid_files)
+
+# %%
 # loading csv files in memory
+import pandas as pd
 
 csvs = {}
 
@@ -28,7 +32,7 @@ for f in os.listdir(CSV_FILE_PATH):
 
 
 # %%
-
+from urllib.parse import quote
 
 # Building a table to store invalid file names and it's reference in csv
 
@@ -58,6 +62,21 @@ for fileName, filePath in invalid_files:
     invalid_file_table[filePath] = (encodedPath, fileName, listReferences)
 
 
+
+
+# %%
+pd.set_option('display.max_colwidth', None)
+
+invalid_files_without_reference = [ (k, invalid_file_table[k][1], invalid_file_table[k][0]) for k in invalid_file_table if len(invalid_file_table[k][2]) == 0 ]
+
+# with open("../without_reference2.txt", "w") as f:
+#     for line in invalid_files_without_reference:
+#         f.write(line[0] + ', ' + line[2] + '\n')
+
+len(invalid_file_table) - len(invalid_files_without_reference)
+
+
+
 # %%
 
 existing_files_set = set(map(lambda x: x[1], files))
@@ -65,15 +84,15 @@ new_files_set = set()
 
 rename_table = {}
 
-valid_char = re.compile(r'[a-zA-Z0-9_.-]')
+valid_char = re.compile(r'[a-zA-Z0-9_.]')
 
 path_gen = lambda op, nn: "/".join( op.split('/')[:-1] + [ nn ])
 
 for path in invalid_file_table:
 
     name = invalid_file_table[path][1]
-    new_name = "".join(map( lambda x : '_'  if valid_char.match(x) == None else x, name ))
-
+    new_name_t = "".join(map( lambda x : '_'  if valid_char.match(x) == None else x, name ))
+    new_name = re.sub(r'_{2,}', '_', new_name_t)
     new_path = path_gen(path, new_name)
 
     counter = 1
@@ -117,9 +136,18 @@ for old_path in rename_table:
 
 collision_table = {k: path_set[k] for k in path_set if len(path_set[k]) > 1 }
 
+collision_table
+
+
+# %%
+
 logFile = open("operations.log", 'at')
 
 for old_path in invalid_file_table:
+    
+    if len(invalid_file_table[old_path][2]) == 0:
+        continue
+
     new_path, new_name = rename_table[old_path]
 
     ret_mv = os.system(f'git mv "{old_path}" "{new_path}"')
@@ -148,5 +176,11 @@ for old_path in invalid_file_table:
 logFile.close()
 
 
+
+# %%
+import csv
+
+for csv_file_name in csvs:
+    csvs[csv_file_name].to_csv(os.path.join('csv', csv_file_name), index=False, quoting=csv.QUOTE_ALL )
 
 

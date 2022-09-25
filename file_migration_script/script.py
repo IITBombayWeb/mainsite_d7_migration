@@ -184,3 +184,33 @@ for csv_file_name in csvs:
     csvs[csv_file_name].to_csv(os.path.join('csv', csv_file_name), index=False, quoting=csv.QUOTE_ALL )
 
 
+# %%
+from urllib.parse import unquote
+
+file_regex = r'(files/[^, "#]*)'
+
+all_files_in_csv = set()
+
+for csv_file_name in csvs:
+    csv_dataframe = csvs[csv_file_name]
+    num_cols = len(csv_dataframe.columns)
+    for col_i in range(num_cols):
+            col_series = csv_dataframe.iloc[:,col_i].dropna()
+            files_series = col_series.str.extractall(file_regex)
+
+            for item in files_series[0]:
+                all_files_in_csv.add(unquote(item))
+
+with open('all_files_in_csv.txt', 'w') as f:
+    f.writelines(map(lambda x: x + '\n', all_files_in_csv) )
+
+not_found_files = set()
+
+for f_path in all_files_in_csv:
+    if not os.path.isfile(f_path):
+        not_found_files.add(f_path)
+
+with open('files_not_found.txt', 'w') as f:
+    f.writelines(map(lambda x: x + '\n', not_found_files))
+
+

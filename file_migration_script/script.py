@@ -187,7 +187,7 @@ for csv_file_name in csvs:
 # %%
 from urllib.parse import unquote
 
-file_regex = r'(files/[^, "#]*)'
+file_regex = r'(files/[^, "#?]*)'
 
 all_files_in_csv = set()
 
